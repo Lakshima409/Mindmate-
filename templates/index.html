@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MindMate - Mental Health Chatbot</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-background text-foreground min-h-screen font-sans antialiased">
+  <!-- Theme Toggle -->
+  <button id="themeToggle" aria-label="Toggle dark mode" class="absolute top-6 right-6 p-2 rounded-full transition-colors hover:bg-gray-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:ring-2 focus-visible:ring-primary" mode="dark">
+    <svg id="moonIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="hidden">
+      <circle cx="12" cy="12" r="5"></circle>
+      <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path>
+    </svg>
+    <svg id="sunIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="5"></circle>
+      <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path>
+    </svg>
+  </button>
+
+  <!-- Sidebar -->
+  <div class="w-64 bg-purple-200 text-gray-800 p-4 flex flex-col justify-between">
+    <div>
+      <div class="flex items-center space-x-2 mb-6">
+        <img src="https://img.icons8.com/emoji/48/brain-emoji.png" alt="Logo" class="w-8 h-8" />
+        <h1 class="text-xl font-bold">MindMate</h1>
+      </div>
+      <button onclick="startNewChat()" class="w-full bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 transition">New Chat</button>
+      <p class="mt-6 text-sm text-gray-600">Live Time:</p>
+      <p id="liveTime" class="font-semibold text-lg mt-1 text-purple-800"></p>
+    </div>
+    <div class="text-xs text-gray-600 text-center">© 2025 MindMate</div>
+  </div>
+
+  </div>
+
+  <!-- Main Chat Area -->
+  <div class="flex-1 flex flex-col overflow-hidden bg-white">
+    <div class="p-6 space-y-4">
+      <div class="text-center text-foreground/40 text-sm" id="timestamp"></div>
+      <div id="chat" class="space-y-4 overflow-y-auto"></div>
+    </div>
+    <div class="p-6 bg-white border-t border-gray-200">
+      <div class="flex items-center space-x-3">
+        <input id="message" type="text" placeholder="Write your message..." class="flex-1 px-4 py-2 border rounded-xl" />
+        <button id="sendBtn" class="px-5 py-2 rounded-bg-primary text-white hover:bg-primary/90">Send</button>
+      </div>
+    </div>
+  </div>
+  <div class="flex-1 flex flex-col">
+    
+    <!-- Header -->
+    <div class="bg-white border-b px-6 py-4">
+      <h2 class="text-xl font-semibold text-purple-700">MindMate <span class="text-sm text-green-500 ml-2">● Online</span></h2>
+    </div>
+
+    <!-- Chat Body -->
+    <div id="chat" class="flex-1 p-6 space-y-4 overflow-y-auto bg-gradient-to-b from-purple-50 to-pink-50">
+      <!-- Timestamp + Welcome Message will be added dynamically -->
+    </div>
+
+    <!-- Input Section -->
+    <div class="flex items-center bg-white border-t px-6 py-4">
+      <input id="message" type="text" placeholder="Write your message..." 
+             class="flex-1 px-4 py-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-purple-500" />
+      <button id="sendBtn" onclick="send()" 
+              class="ml-4 bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-full transition">
+        <div id="typingIndicator" class="flex items-start text-sm text-foreground/40 hidden">
+    <div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mr-3">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"></circle>
+        <path d="M12 5v5l3 3"></path>
+      </svg>
+    </div>
+    <span>MindMate is typing...</span>
+  </div>
+
+  <script>
+    // Live time updater
+    function updateTime() {
+      const now = new Date();
+      const options = { hour: '2-digit', minute: '2-digit', second: '2-digit' };
+      document.getElementById("liveTime").innerText = now.toLocaleTimeString([], options);
+    }
+    setInterval(updateTime, 1000); // Update every second
+    updateTime(); // Initial call
+
+    function appendMessage(msg, sender = "bot") {
+      const chat = document.getElementById("chat");
+      const wrapper = document.createElement("div");
+      wrapper.className = "flex " + (sender === "user" ? "justify-end" : "justify-start");
+
+      const bubble = document.createElement("div");
+      bubble.className = "max-w-lg " +
+        (sender === "user"
+          ? "bg-purple-500 text-white self-end"
+          : "bg-white text-gray-800 self-start") +
+        " p-4 rounded-xl shadow";
+
+      bubble.innerText = msg;
+      wrapper.appendChild(bubble);
+      chat.appendChild(wrapper);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function send() {
+      const input = document.getElementById("message");
+      const msg = input.value.trim();
+      if (!msg) return;
+      appendMessage(msg, "user");
+
+      fetch("/ask", {
+        method: "POST",
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: "message=" + encodeURIComponent(msg)
+      })
+      .then(res => res.json())
+      .then(data => {
+        appendMessage(data.response, "bot");
+        input.value = "";
+      })
+      .catch(() => {
+        appendMessage("Sorry, there was an error. Please try again.", "bot");
+      });
+    }
+
+    function startNewChat() {
+      const chat = document.getElementById("chat");
+      chat.innerHTML = '';
+
+      const now = new Date();
+      const dateTime = now.toLocaleString();
+      const timeStamp = document.createElement("div");
+      timeStamp.className = "text-center text-xs text-gray-500";
+      timeStamp.innerText = dateTime;
+      chat.appendChild(timeStamp);
+
+      appendMessage("Hi there! I'm here to help with your mental health concerns. How can I assist you today?", "bot");
+    }
+
+    document.getElementById("message").addEventListener("keypress", function (e) {
+      if (e.key === "Enter") send();
+    });
+
+    // Auto start chat on load
+    window.onload = () => {
+      startNewChat();
+    };
+  </script>
+<script>
+    // Chat state
+    let isSending = false;
+    
+    // Chat elements
+    const chat = document.getElementById('chat');
+    const messageInput = document.getElementById('message');
+    const sendBtn = document.getElementById('sendBtn');
+    
+    function appendMessage(msg, sender = 'bot', options = {}) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'flex ' + (sender === 'user' ? 'justify-end' : 'justify-start');
+      const bubble = document.createElement('div');
+      bubble.className = 'max-w-lg ' + (sender === 'user' ? 'bg-primary/20 text-primary self-end border border-primary/20 rounded-xl p-4 shadow-sm' : 'bg-white/80 text-foreground self-start rounded-xl p-4 shadow-sm border border-border');
+      const isCrisis = options.isCrisis === true;
+      if (isCrisis) bubble.className += ' animate-fade-in';
+      if (sender === 'bot') {
+        const avatar = document.createElement('div');
+        avatar.className = 'w-8 h-8 rounded-full flex-shrink-0 bg-primary/10 text-primary flex items-center justify-center flex-shrink-0 mr-3';
+        avatar.innerText = 'M';
+        wrapper.prepend(avatar);
+      }
+      const textNode = document.createTextNode(msg);
+      bubble.appendChild(textNode);
+      wrapper.appendChild(bubble);
+      chat.appendChild(wrapper);
+      chat.scrollTop = chat.scrollHeight;
+    }
+    
+    function showTypingIndicator() {
+      const typing = document.getElementById('typingIndicator');
+      if (typing) typing.classList.remove('hidden');
+    }
+    
+    function hideTypingIndicator() {
+      const typing = document.getElementById('typingIndicator');
+      if (typing) typing.classList.add('hidden');
+    }
+    
+    async function send() {
+      const msg = messageInput.value.trim();
+      if (!msg || isSending) return;
+      appendMessage(msg, 'user');
+      messageInput.value = '';
+      sendBtn.setAttribute('aria-disabled', 'true');
+      isSending = true;
+      sendBtn.disabled = true;
+      sendBtn.classList.add('disabled:opacity-50', 'disabled:cursor-not-allowed');
+      showTypingIndicator();
+      try {
+        const csrfResponse = await fetch('/csrf-token');
+        const csrfData = await csrfResponse.json();
+        const response = await fetch('/ask', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': csrfData.csrf_token,
+          },
+          body: 'message=' + encodeURIComponent(msg)
+        });
+        const data = await response.json();
+        hideTypingIndicator();
+        if (data.response && data.isCrisis) {
+          appendMessage(data.response, 'bot', { isCrisis: true });
+        } else {
+          appendMessage(data.response, 'bot');
+        }
+      } catch (error) {
+        hideTypingIndicator();
+        appendMessage('Sorry, there was an error. Please try again.', 'bot');
+      } finally {
+        isSending = false;
+        sendBtn.disabled = false;
+        sendBtn.classList.remove('disabled:opacity-50', 'disabled:cursor-not-allowed');
+        sendBtn.removeAttribute('aria-disabled');
+        messageInput.focus();
+      }
+    }
+    
+    window.onload = () => {
+      startNewChat();
+    };
+    
+    function startNewChat() {
+      const chat = document.getElementById('chat');
+      chat.innerHTML = '';
+      const now = new Date();
+      const dateTime = now.toLocaleString();
+      const timeStamp = document.createElement('div');
+      timeStamp.className = 'text-center text-foreground/40 text-sm';
+      timeStamp.innerText = dateTime;
+      chat.appendChild(timeStamp);
+      appendMessage(
+        'Hi there! I\'m here to help with your mental health concerns. How can I assist you today?',
+        'bot'
+      );
+    }
+    
+    messageInput.addEventListener('keypress', function (e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        send();
+      }
+    });
+</script>
+</html>

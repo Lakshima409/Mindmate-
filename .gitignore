@@ -1,0 +1,55 @@
+# Python
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+
+# Local secrets
+.env
+.env.*
+
+# Allow safe example only
+!.env.example
+
+# SQLite databases and sidecars
+*.db
+*.sqlite
+*.sqlite3
+*.db-wal
+*.db-shm
+*.db-journal
+
+# Logs and temporary files
+*.log
+*.log.*
+tmp_*.log
+test_output.txt
+test_py.txt
+quick_train_stderr.txt
+quick_train_stdout.txt
+train_output.txt
+training_output.txt
+
+# Backups
+*.bak
+*.backup
+*.old
+*.orig
+
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Python test caches
+.pytest_cache/
+
+# Local-only files excluded from the public release inventory
+train.py
+data.json
